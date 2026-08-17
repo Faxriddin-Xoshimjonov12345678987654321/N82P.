@@ -6,125 +6,124 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from .models import Product
 
-@api_view(['POST'])
-def product_create(request):
-    title = request.data.get('title')
-    desc = request.data.get('desc')
-    price = request.data.get('price')
+@api_view(['POST', 'GET'])
+def product_list_create(request):
+    if  request.method =='POST':
+        title = request.data.get('title')
+        desc = request.data.get('desc')
+        price = request.data.get('price')
 
-    product = Product(title=title, desc=desc, price=price) #.objects.create qilsak ham bo'ladi
-    product.save()
+        product = Product(title=title, desc=desc, price=price) #.objects.create qilsak ham bo'ladi
+        product.save()
 
-    return Response(
-        {'msg': 'Product created successfully', 
-         'title':product.title,
-         'desc':product.desc,
-         'price':product.price,
-         },
-        status=status.HTTP_201_CREATED
-    )
+        return Response(
+            {'msg': 'Product created successfully', 
+            'title':product.title,
+            'desc':product.desc,
+            'price':product.price,
+            },
+            status=status.HTTP_201_CREATED
+        )
 
-@api_view(['GET'])
-def product_list(request):
-    products = Product.objects.all() # query_set da [obj1, obj2, obj3]
-    product_list = []
 
-    for product in products:
-        product_list.append({
+    if  request.method == 'GET':
+        products = Product.objects.all() # query_set da [obj1, obj2, obj3]
+        product_list = []   
+
+        for product in products:
+            product_list.append({
+                'id':product.id,
+                'title':product.title,
+                'desc':product.desc,
+                'price':product.price
+            })
+
+        return Response({
+            'msg': 'Product list fetched successfully',
+            'count': len(product_list),
+            'products':product_list}, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+def product_detail_update_partialupdate_delete(request, pk):
+    if request.method =='GET':
+        try:    
+            product = Product.objects.get(pk=pk)
+        except Product.DoesNotExist:
+            return Response({'msg': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        product_data = {
             'id':product.id,
             'title':product.title,
             'desc':product.desc,
             'price':product.price
-        })
+        }
 
-    return Response({
-        'msg': 'Product list fetched successfully',
-        'count': len(product_list),
-        'products':product_list}, status=status.HTTP_200_OK)
+        return Response({
+            'msg': 'Product detail fetched successfully',
+            'product':product_data
+        }, status=status.HTTP_200_OK)
 
-@api_view(['GET'])
-def product_detail(request, pk):
-    try:
-        product = Product.objects.get(pk=pk)
-    except Product.DoesNotExist:
-        return Response({'msg': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'PUT':
+        product = Product.objects.filter(pk=pk).first()
 
-    product_data = {
-        'id':product.id,
-        'title':product.title,
-        'desc':product.desc,
-        'price':product.price
-    }
-
-    return Response({
-        'msg': 'Product detail fetched successfully',
-        'product':product_data
-    }, status=status.HTTP_200_OK)
-
-@api_view(['PUT'])
-def product_update(request, pk):
-    product = Product.objects.filter(pk=pk).first()
-
-    if not product:
-        raise NotFound('Product not found')
-
-    product.title = request.data.get('title')
-    product.desc = request.data.get('desc')
-    product.price = request.data.get('price')
-
-    product.save()
-
-    return Response({
-        'msg': 'Product updated', 
-        'title':product.title,
-        'desc':product.desc,
-        'price':product.price,
-    }, status=status.HTTP_200_OK)
-
-@api_view(['PATCH'])
-def product_partial_update(request, pk):
-    product = Product.objects.filter(pk=pk).first()
-    
-    if not product:
+        if not product:
             raise NotFound('Product not found')
 
-    title = request.data.get('title')
-    desc = request.data.get('desc')
-    price = request.data.get('price')
+        product.title = request.data.get('title')
+        product.desc = request.data.get('desc')
+        product.price = request.data.get('price')
 
-    if title is None and desc is None and price is None:
-        raise ValidationError(detail={
-            'msg': 'Nimadir yuborishingiz shart',
-        })
+        product.save()
 
-    if title:
-        product.title = title
-
-    if desc:
-        product.desc = desc
-
-    if price:
-        product.price = price
-    
-    product.save()
-    
-    return Response({
-            'msg': 'Product partial updated', 
+        return Response({
+            'msg': 'Product updated', 
             'title':product.title,
             'desc':product.desc,
             'price':product.price,
         }, status=status.HTTP_200_OK)
 
-@api_view(['DELETE'])
-def product_delete(request, pk):
-    product = Product.objects.filter(pk=pk).first()
+    if request.method == 'PATCH':
+        product = Product.objects.filter(pk=pk).first()
         
-    if not product:
-        raise NotFound('Product not found')
+        if not product:
+                raise NotFound('Product not found')
 
-    product.delete()
+        title = request.data.get('title')
+        desc = request.data.get('desc')
+        price = request.data.get('price')
 
-    return  Response({
-        'msg':  'Product deleted'
-    }, status=status.HTTP_200_OK)
-    
+        if title is None and desc is None and price is None:
+            raise ValidationError(detail={
+                'msg': 'Nimadir yuborishingiz shart',
+            })
+
+        if title:
+            product.title = title
+
+        if desc:
+            product.desc = desc
+
+        if price:
+            product.price = price
+        
+        product.save()
+        
+        return Response({
+                'msg': 'Product partial updated', 
+                'title':product.title,
+                'desc':product.desc,
+                'price':product.price,
+            }, status=status.HTTP_200_OK)
+
+    if request.method == 'DELETE':
+        product = Product.objects.filter(pk=pk).first()
+            
+        if not product:
+            raise NotFound('Product not found')
+
+        product.delete()
+
+        return  Response({
+            'msg':  'Product deleted'
+        }, status=status.HTTP_200_OK)
+        
