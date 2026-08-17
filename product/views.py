@@ -46,7 +46,7 @@ def product_list_create(request):
 @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
 def product_detail_update_partialupdate_delete(request, pk):
     if request.method =='GET':
-        try:    
+        try:       
             product = Product.objects.get(pk=pk)
         except Product.DoesNotExist:
             return Response({'msg': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
